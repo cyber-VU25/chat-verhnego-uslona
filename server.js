@@ -83,7 +83,23 @@ function randomCode() {
   return String(crypto.randomInt(100000, 999999));
 }
 
-async function sendSmsCode(phone, code) {
+async function async function sendSmsCode(phone, code) {
+  if (botToken && adminChatId) {
+    try {
+      const bot = new TelegramBot(botToken);
+      await bot.sendMessage(
+        adminChatId,
+        `🔐 Код входа для ${phone}: ${code}`
+      );
+      console.log(`Код отправлен в Telegram для ${phone}`);
+      return;
+    } catch (e) {
+      console.error("Telegram code error:", e.message);
+    }
+  }
+
+  console.log(`\n[КОД ВХОДА] ${phone}: ${code}\n`);
+}(phone, code) {
   if (OTP_MODE === 'demo') {
     console.log(`\n[КОД ВХОДА] ${phone}: ${code}\n`);
     return;
