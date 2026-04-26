@@ -99,14 +99,8 @@ async function sendSmsCode(phone, code) {
   }
 
   console.log(`\n[КОД ВХОДА] ${phone}: ${code}\n`);
-} 
-  if (OTP_MODE === 'demo') {
-    console.log(`\n[КОД ВХОДА] ${phone}: ${code}\n`);
-    return;
-  }
-  // Подключите здесь SMS-провайдера: sms.ru, Twilio, SMSC, МТС Exolve и т.п.
-  console.log(`[SMS MODE NOT CONFIGURED] ${phone}: ${code}`);
 }
+
 
 function currentUser(req) {
   if (!req.session.userId) return null;
