@@ -83,7 +83,7 @@ function randomCode() {
   return String(crypto.randomInt(100000, 999999));
 }
 
-async function async function sendSmsCode(phone, code) {
+async function sendSmsCode(phone, code) {
   if (botToken && adminChatId) {
     try {
       const bot = new TelegramBot(botToken);
@@ -99,7 +99,7 @@ async function async function sendSmsCode(phone, code) {
   }
 
   console.log(`\n[КОД ВХОДА] ${phone}: ${code}\n`);
-}(phone, code) {
+} 
   if (OTP_MODE === 'demo') {
     console.log(`\n[КОД ВХОДА] ${phone}: ${code}\n`);
     return;
