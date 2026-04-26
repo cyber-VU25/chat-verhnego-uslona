@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ЧАТ ВЕРХНЕГО УСЛОНА</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="badge">Верхний Услон • общий чат</div>
+      <h1 id="siteName">ЧАТ ВЕРХНЕГО УСЛОНА</h1>
+      <p>Место для быстрых сообщений жителей и участников сообщества. Вход только по номеру телефона.</p>
+      <div class="waves" aria-hidden="true"></div>
+    </section>
+
+    <section id="auth" class="panel">
+      <h2>Войти или зарегистрироваться</h2>
+      <label>Имя
+        <input id="name" autocomplete="name" placeholder="Например, Алексей" />
+      </label>
+      <label>Телефон
+        <input id="phone" inputmode="tel" autocomplete="tel" placeholder="+7 999 000-00-00" />
+      </label>
+      <button id="sendCode">Получить код</button>
+      <div id="codeBox" class="hidden">
+        <label>Код из SMS
+          <input id="code" inputmode="numeric" maxlength="6" placeholder="000000" />
+        </label>
+        <button id="verifyCode">Войти в чат</button>
+      </div>
+      <p id="authMsg" class="muted"></p>
+    </section>
+
+    <section id="chat" class="chat hidden">
+      <header class="chatHeader">
+        <div>
+          <strong id="hello">Чат</strong>
+          <span>Сообщения появляются мгновенно</span>
+        </div>
+        <button id="logout" class="ghost">Выйти</button>
+      </header>
+      <div id="messages" class="messages"></div>
+      <form id="messageForm" class="composer">
+        <input id="messageInput" maxlength="1000" autocomplete="off" placeholder="Напишите сообщение..." />
+        <button>Отправить</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
