@@ -68,6 +68,9 @@ async function showChat(user) {
 
   socket = io({ withCredentials: true });
   socket.on('message', renderMessage);
+socket.on('error', (msg) => {
+  alert(msg);
+});
   socket.on('messageDeleted', ({ id }) => {
   const el = document.querySelector(`[data-message-id="${id}"]`);
   if (el) el.remove();
