@@ -38,7 +38,20 @@ if (m.type === 'voice') {
 } else if (m.type === 'file') {
   textEl.innerHTML = `<a href="${m.file_url}" target="_blank">📁 ${m.text || 'Скачать файл'}</a>`;
 } else {
-  textEl.textContent = m.text;
+  const safeText = m.text || '';
+
+  if (m.system) {
+    textEl.innerHTML = safeText.replace(
+      /(https?:\/\/[^\s]+|www\.[^\s]+)/gi,
+      (url) => {
+        const href = url.startsWith('http') ? url : `https://${url}`;
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+      }
+    );
+  } else {
+    textEl.textContent = safeText;
+  }
+}
 }  $('messages').appendChild(el);
   $('messages').scrollTop = $('messages').scrollHeight;
 }
