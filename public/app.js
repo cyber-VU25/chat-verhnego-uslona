@@ -52,7 +52,7 @@ if (m.type === 'voice') {
     textEl.textContent = safeText;
   }
 }
-}  $('messages').appendChild(el);
+  $('messages').appendChild(el);
   $('messages').scrollTop = $('messages').scrollHeight;
 }
 
