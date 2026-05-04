@@ -25,8 +25,12 @@ CREATE TABLE IF NOT EXISTS users (
   phone TEXT UNIQUE NOT NULL,
   name TEXT,
   is_banned INTEGER DEFAULT 0,
+  is_muted INTEGER DEFAULT 0,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+try {
+  db.prepare('ALTER TABLE users ADD COLUMN is_muted INTEGER DEFAULT 0').run();
+} catch (e) {}
 
 CREATE TABLE IF NOT EXISTS otp_codes (
   phone TEXT PRIMARY KEY,
@@ -204,8 +208,8 @@ io.on('connection', (socket) => {
     const clean = String(text || '').trim().slice(0, 1000);
     if (!clean) return;
 
-    const fresh = db.prepare('SELECT is_banned FROM users WHERE id = ?').get(user.id);
-    if (!fresh || fresh.is_banned) return;
+    const fresh = db.prepare('SELECT is_banned, is_muted FROM users WHERE id = ?').get(user.id);
+if (!fresh || fresh.is_banned || fresh.is_muted) return;
 
     const info = db.prepare('INSERT INTO messages(user_id, text) VALUES (?, ?)').run(user.id, clean);
     const msg = db.prepare(`
@@ -237,12 +241,78 @@ if (botToken && adminChatId) {
     if (!adminOnly(msg)) return;
     bot.sendMessage(msg.chat.id, 'Команды: /users, /ban +79990000000, /unban +79990000000, /broadcast текст');
   });
+bot.onText(/\/last/, (msg) => {
+  if (!adminOnly(msg)) return;
+
+  const messages = db.prepare(`
+    SELECT m.id, m.text, m.created_at, m.system, u.name, u.phone
+    FROM messages m
+    LEFT JOIN users u ON u.id = m.user_id
+    ORDER BY m.id DESC
+    LIMIT 10
+  `).all();
+
+  const text = messages.length
+    ? messages.map(m => {
+        const author = m.system ? 'Система' : `${m.name || 'без имени'} ${m.phone || ''}`;
+        return `#${m.id} — ${author}\n${m.text.slice(0, 120)}`;
+      }).join('\n\n')
+    : 'Сообщений пока нет.';
+
+  bot.sendMessage(msg.chat.id, text);
+});
+
+bot.onText(/\/delete\s+(\d+)/, (msg, match) => {
+  if (!adminOnly(msg)) return;
+
+  const id = Number(match[1]);
+  const found = db.prepare('SELECT id FROM messages WHERE id = ?').get(id);
+
+  if (!found) {
+    return bot.sendMessage(msg.chat.id, `Сообщение #${id} не найдено.`);
+  }
+
+  db.prepare('DELETE FROM messages WHERE id = ?').run(id);
+  io.emit('messageDeleted', { id });
+
+  bot.sendMessage(msg.chat.id, `Сообщение #${id} удалено.`);
+});
+
+bot.onText(/\/mute\s+(.+)/, (msg, match) => {
+  if (!adminOnly(msg)) return;
+
+  const phone = normalizePhone(match[1]);
+  if (!phone) return bot.sendMessage(msg.chat.id, 'Неверный номер.');
+
+  const result = db.prepare('UPDATE users SET is_muted = 1 WHERE phone = ?').run(phone);
+
+  if (!result.changes) {
+    return bot.sendMessage(msg.chat.id, `Пользователь ${phone} не найден.`);
+  }
+
+  bot.sendMessage(msg.chat.id, `Пользователь ${phone} замучен.`);
+});
+
+bot.onText(/\/unmute\s+(.+)/, (msg, match) => {
+  if (!adminOnly(msg)) return;
+
+  const phone = normalizePhone(match[1]);
+  if (!phone) return bot.sendMessage(msg.chat.id, 'Неверный номер.');
+
+  const result = db.prepare('UPDATE users SET is_muted = 0 WHERE phone = ?').run(phone);
+
+  if (!result.changes) {
+    return bot.sendMessage(msg.chat.id, `Пользователь ${phone} не найден.`);
+  }
+
+  bot.sendMessage(msg.chat.id, `Мут снят: ${phone}`);
+});
 
   bot.onText(/\/users/, (msg) => {
     if (!adminOnly(msg)) return;
-    const users = db.prepare('SELECT phone, name, is_banned, created_at FROM users ORDER BY id DESC LIMIT 50').all();
+    const users = db.prepare('SELECT phone, name, is_banned, is_muted, created_at FROM users ORDER BY id DESC LIMIT 50').all();
     const text = users.length
-      ? users.map(u => `${u.is_banned ? '⛔' : '✅'} ${u.phone} — ${u.name || 'без имени'} — ${u.created_at}`).join('\n')
+      ? users.map(u => `${u.is_banned ? '⛔' : u.is_muted ? '🔇' : '✅'} ${u.phone} — ${u.name || 'без имени'} — ${u.created_at}`).join('\n')
       : 'Пользователей пока нет.';
     bot.sendMessage(msg.chat.id, text);
   });

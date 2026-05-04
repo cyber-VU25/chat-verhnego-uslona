@@ -22,6 +22,7 @@ function renderMessage(m) {
   const el = document.createElement('div');
   const isMe = me && m.phone === me.phone;
   el.className = `msg ${isMe ? 'me' : ''} ${m.system ? 'system' : ''}`;
+  el.dataset.messageId = m.id;
   const author = m.system ? 'Система' : (m.name || m.phone || 'Участник');
   el.innerHTML = `
     <div class="meta"><strong></strong><span>${formatTime(m.created_at)}</span></div>
@@ -45,6 +46,10 @@ async function showChat(user) {
 
   socket = io({ withCredentials: true });
   socket.on('message', renderMessage);
+  socket.on('messageDeleted', ({ id }) => {
+  const el = document.querySelector(`[data-message-id="${id}"]`);
+  if (el) el.remove();
+});
   socket.on('auth-error', () => location.reload());
 }
 
