@@ -31,14 +31,15 @@ function renderMessage(m) {
   el.querySelector('strong').textContent = author;
   const textEl = el.querySelector('.text');
 
-if (m.type === 'photo') {
+if (m.type === 'voice') {
+  textEl.innerHTML = `<audio controls src="${m.file_url}"></audio>`;
+} else if (m.type === 'photo') {
   textEl.innerHTML = `<img src="${m.file_url}" style="max-width:100%; border-radius:12px;">`;
 } else if (m.type === 'file') {
   textEl.innerHTML = `<a href="${m.file_url}" target="_blank">📁 ${m.text || 'Скачать файл'}</a>`;
 } else {
   textEl.textContent = m.text;
-}
-  $('messages').appendChild(el);
+}  $('messages').appendChild(el);
   $('messages').scrollTop = $('messages').scrollHeight;
 }
 
@@ -151,5 +152,42 @@ $('fileInput').addEventListener('change', async () => {
     alert(e.message);
   } finally {
     $('fileInput').value = '';
+  }
+});
+
+let mediaRecorder;
+let audioChunks = [];
+
+$('voiceButton').addEventListener('click', async () => {
+  if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(audioChunks, { type: 'audio/webm' });
+
+      const formData = new FormData();
+      formData.append('file', blob, 'voice.webm');
+
+      try {
+        await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+      } catch (e) {
+        alert('Ошибка отправки голосового');
+      }
+    };
+
+    mediaRecorder.start();
+    $('voiceButton').textContent = '⏹️';
+  } else {
+    mediaRecorder.stop();
+    $('voiceButton').textContent = '🎤';
   }
 });

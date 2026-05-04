@@ -211,8 +211,13 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 
   if (!req.file) return res.status(400).json({ error: 'Файл не загружен.' });
 
-  const isImage = req.file.mimetype.startsWith('image/');
-  const type = isImage ? 'photo' : 'file';
+  let type = 'file';
+
+if (req.file.mimetype.startsWith('image/')) {
+  type = 'photo';
+} else if (req.file.mimetype.startsWith('audio/')) {
+  type = 'voice';
+}
   const fileUrl = `/uploads/${req.file.filename}`;
 
   const info = db.prepare(`
