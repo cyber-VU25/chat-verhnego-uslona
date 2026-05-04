@@ -28,9 +28,6 @@ CREATE TABLE IF NOT EXISTS users (
   is_muted INTEGER DEFAULT 0,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
-try {
-  db.prepare('ALTER TABLE users ADD COLUMN is_muted INTEGER DEFAULT 0').run();
-} catch (e) {}
 
 CREATE TABLE IF NOT EXISTS otp_codes (
   phone TEXT PRIMARY KEY,
@@ -48,6 +45,10 @@ CREATE TABLE IF NOT EXISTS messages (
   FOREIGN KEY(user_id) REFERENCES users(id)
 );
 `);
+
+try {
+  db.prepare('ALTER TABLE users ADD COLUMN is_muted INTEGER DEFAULT 0').run();
+} catch (e) {}
 
 const app = express();
 app.use(helmet({
