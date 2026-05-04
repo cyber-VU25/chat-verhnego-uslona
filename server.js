@@ -10,11 +10,27 @@ const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 const { Server } = require('socket.io');
 const TelegramBot = require('node-telegram-bot-api');
+const multer = require('multer');
 
 const PORT = Number(process.env.PORT || 3000);
 const SITE_NAME = process.env.SITE_NAME || 'ЧАТ ВЕРХНЕГО УСЛОНА';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me';
 const OTP_MODE = process.env.OTP_MODE || 'demo';
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+require('fs').mkdirSync(uploadsDir, { recursive: true });
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: uploadsDir,
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      const name = crypto.randomBytes(16).toString('hex') + ext;
+      cb(null, name);
+    }
+  }),
+  limits: {
+    fileSize: 10 * 1024 * 1024
+  }
+});
 
 const db = new Database(path.join(__dirname, 'data', 'chat.sqlite'));
 db.pragma('journal_mode = WAL');
@@ -40,11 +56,21 @@ CREATE TABLE IF NOT EXISTS messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER,
   system INTEGER DEFAULT 0,
-  text TEXT NOT NULL,
+  text TEXT,
+  type TEXT DEFAULT 'text',
+  file_url TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(user_id) REFERENCES users(id)
 );
 `);
+
+try {
+  db.prepare('ALTER TABLE messages ADD COLUMN type TEXT DEFAULT "text"').run();
+} catch (e) {}
+
+try {
+  db.prepare('ALTER TABLE messages ADD COLUMN file_url TEXT').run();
+} catch (e) {}
 
 try {
   db.prepare('ALTER TABLE users ADD COLUMN is_muted INTEGER DEFAULT 0').run();

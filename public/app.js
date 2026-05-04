@@ -29,7 +29,15 @@ function renderMessage(m) {
     <div class="text"></div>
   `;
   el.querySelector('strong').textContent = author;
-  el.querySelector('.text').textContent = m.text;
+  const textEl = el.querySelector('.text');
+
+if (m.type === 'photo') {
+  textEl.innerHTML = `<img src="${m.file_url}" style="max-width:100%; border-radius:12px;">`;
+} else if (m.type === 'file') {
+  textEl.innerHTML = `<a href="${m.file_url}" target="_blank">📁 ${m.text || 'Скачать файл'}</a>`;
+} else {
+  textEl.textContent = m.text;
+}
   $('messages').appendChild(el);
   $('messages').scrollTop = $('messages').scrollHeight;
 }
@@ -118,3 +126,30 @@ $('logout').addEventListener('click', async () => {
 });
 
 boot();
+
+$('fileButton').addEventListener('click', () => {
+  $('fileInput').click();
+});
+
+$('fileInput').addEventListener('change', async () => {
+  const file = $('fileInput').files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include'
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка загрузки файла');
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    $('fileInput').value = '';
+  }
+});

@@ -43,8 +43,10 @@
       </header>
       <div id="messages" class="messages"></div>
       <form id="messageForm" class="composer">
-        <input id="messageInput" maxlength="1000" autocomplete="off" placeholder="Напишите сообщение..." />
-        <button>Отправить</button>
+        <input id="fileInput" type="file" hidden />
+<button type="button" id="fileButton" class="ghost">📎</button>
+<input id="messageInput" maxlength="1000" autocomplete="off" placeholder="Напишите сообщение..." />
+<button>Отправить</button>
       </form>
     </section>
   </main>
