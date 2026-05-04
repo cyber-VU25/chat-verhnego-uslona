@@ -200,6 +200,37 @@ app.post('/api/logout', (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
 
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  const user = currentUser(req);
+  if (!user || user.is_banned) return res.status(401).json({ error: 'Нужен вход.' });
+
+  const fresh = db.prepare('SELECT is_banned, is_muted FROM users WHERE id = ?').get(user.id);
+  if (!fresh || fresh.is_banned || fresh.is_muted) {
+    return res.status(403).json({ error: 'Вы не можете отправлять сообщения.' });
+  }
+
+  if (!req.file) return res.status(400).json({ error: 'Файл не загружен.' });
+
+  const isImage = req.file.mimetype.startsWith('image/');
+  const type = isImage ? 'photo' : 'file';
+  const fileUrl = `/uploads/${req.file.filename}`;
+
+  const info = db.prepare(`
+    INSERT INTO messages(user_id, text, type, file_url)
+    VALUES (?, ?, ?, ?)
+  `).run(user.id, req.file.originalname, type, fileUrl);
+
+  const msg = db.prepare(`
+    SELECT m.id, m.text, m.created_at, m.system, m.type, m.file_url, u.name, u.phone
+    FROM messages m
+    LEFT JOIN users u ON u.id = m.user_id
+    WHERE m.id = ?
+  `).get(info.lastInsertRowid);
+
+  io.emit('message', msg);
+  res.json({ ok: true });
+});
+
 app.get('/api/messages', (req, res) => {
   const user = currentUser(req);
   if (!user || user.is_banned) return res.status(401).json({ error: 'Нужен вход.' });
